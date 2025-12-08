@@ -1,0 +1,91 @@
+
+import React from 'react';
+import { CraftItem } from '../types';
+import { WishlistHeartIcon, PencilIcon, TrashIcon } from './Icons';
+
+interface ItemCardProps {
+  item: CraftItem;
+  onAddToCart: () => void;
+  isInCart: boolean;
+  isInWishlist: boolean;
+  onToggleWishlist: () => void;
+  onEdit: (item: CraftItem) => void;
+  onDeleteItem: (itemId: number) => void;
+  isAdminMode: boolean;
+}
+
+const ItemCard: React.FC<ItemCardProps> = ({ item, onAddToCart, isInCart, isInWishlist, onToggleWishlist, onEdit, onDeleteItem, isAdminMode }) => {
+  
+  return (
+    <div className="bg-brand-white-ish rounded-xl shadow-lg overflow-hidden flex flex-col h-full group transition-transform duration-300 hover:scale-[1.02]">
+      <div className="relative w-full pt-[100%] bg-white"> {/* Aspect Ratio Box 1:1 */}
+        <div className="absolute top-0 left-0 w-full h-full">
+             <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation(); 
+                        onToggleWishlist();
+                    }}
+                    className="p-1.5 bg-brand-white-ish/90 rounded-full text-brand-accent shadow-md hover:scale-110 transition-transform"
+                    aria-label="Toggle Wishlist"
+                >
+                    <WishlistHeartIcon filled={isInWishlist} className="w-5 h-5" />
+                </button>
+                {isAdminMode && (
+                <>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(item);
+                        }}
+                        className="p-1.5 bg-brand-white-ish/90 rounded-full text-brand-text shadow-md hover:text-brand-accent hover:scale-110 transition-transform"
+                        aria-label="Edit Item"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteItem(item.id);
+                        }}
+                        className="p-1.5 bg-brand-white-ish/90 rounded-full text-red-500 shadow-md hover:bg-red-500 hover:text-white hover:scale-110 transition-all"
+                        aria-label="Delete Item"
+                    >
+                        <TrashIcon className="w-5 h-5" />
+                    </button>
+                </>
+                )}
+            </div>
+            
+            <img 
+                src={item.imageUrl} 
+                alt={item.name} 
+                className="w-full h-full object-contain"
+            />
+            
+            <div className="absolute top-2 right-2 bg-brand-accent text-brand-white-ish font-bold text-sm px-2 py-1 rounded-full shadow-sm">
+                R {item.price.toFixed(2)}
+            </div>
+        </div>
+      </div>
+
+      <div className="p-3 flex flex-col flex-grow">
+        <h3 className="text-lg font-bold font-display text-brand-text leading-tight mb-1">{item.name}</h3>
+        {/* Truncate description to 3 lines to prevent card unevenness */}
+        <p className="text-xs text-gray-600 line-clamp-3 mb-3">{item.description}</p>
+        
+        <div className="mt-auto space-y-2">
+            <button
+            onClick={onAddToCart}
+            disabled={isInCart}
+            className="w-full bg-brand-secondary text-brand-white-ish font-bold py-2 px-3 rounded-lg hover:bg-opacity-80 transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm shadow-sm"
+            >
+            {isInCart ? 'In Cart' : 'Add to Cart'}
+            </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ItemCard;
