@@ -15,7 +15,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 import { supabase } from './services/supabaseClient';
 
 const LOGO_URL = "/logo.png"; 
-const SLOGAN = "Huggables - Handmade with love";
+const SLOGAN = "Huggables - Handmade with love";
 
 const App: React.FC = () => {
   const [items, setItems] = useState<CraftItem[]>([]);
@@ -42,14 +42,27 @@ const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
 
+  // Helper to safely parse images from the legacy imageUrl column
+  const parseImages = (imageUrl: string | null): string[] => {
+      if (!imageUrl) return [];
+      try {
+          // Try to parse as JSON (for new multi-image data stored in text column)
+          const parsed = JSON.parse(imageUrl);
+          if (Array.isArray(parsed)) return parsed;
+          return [imageUrl];
+      } catch (e) {
+          // Fallback: it's a simple string URL
+          return [imageUrl];
+      }
+  };
+
   // --- Supabase Data Fetching ---
   const fetchItems = async () => {
     setIsLoading(true);
     setConnectionError(null);
     setIsOffline(false);
     try {
-      // We explicitly quote "imageUrl" and "modelUrl" to respect the camelCase column names
-      // defined in the database schema.
+      // Compatibility Mode: Fetch 'imageUrl' instead of 'images' to avoid SQL error 42703
       const { data, error } = await supabase
         .from('craft_items')
         .select(`
@@ -57,7 +70,7 @@ const App: React.FC = () => {
           name,
           description,
           price,
-          "imageUrl",
+          imageUrl,
           category,
           "modelUrl"
         `)
@@ -66,7 +79,17 @@ const App: React.FC = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setItems(data as CraftItem[]);
+        // Map the database structure (imageUrl) to app structure (images[])
+        const mappedItems: CraftItem[] = data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            images: parseImages(item.imageUrl),
+            category: item.category,
+            modelUrl: item.modelUrl
+        }));
+        setItems(mappedItems);
       } else {
         setItems([]); 
       }
@@ -81,14 +104,11 @@ const App: React.FC = () => {
           setConnectionError("Invalid API Key. Please check services/supabaseClient.ts");
       } else if (errorCode === "42P01") {
           setConnectionError("Table 'craft_items' missing. Please run the SQL script provided.");
-      } else if (errorCode === "42703") {
-          setConnectionError("Database Schema Mismatch. Columns 'imageUrl' or 'modelUrl' missing. Please run the SQL script.");
       } else if (errorCode === "57014") {
           // Timeout error - DB is waking up
           console.warn("Database timeout (Cold Start). Switching to Offline Mode.");
           setIsOffline(true);
           setItems(CRAFT_ITEMS);
-          // Optional: You could show a specific toast here, but we'll stick to the offline indicator.
       } else {
           console.warn("Database connection issue. Switching to Offline Mode.");
           setIsOffline(true);
@@ -173,14 +193,14 @@ const App: React.FC = () => {
     }
 
     try {
-        // DB Update
+        // DB Update: Save array as JSON string in imageUrl column
         const { error } = await supabase
             .from('craft_items')
             .update({
                 name: updatedItem.name,
                 description: updatedItem.description,
                 price: updatedItem.price,
-                imageUrl: updatedItem.imageUrl, 
+                imageUrl: JSON.stringify(updatedItem.images), 
                 category: updatedItem.category
             })
             .eq('id', updatedItem.id);
@@ -246,14 +266,14 @@ const App: React.FC = () => {
     }
 
     try {
-        // DB Insert
+        // DB Insert: Save array as JSON string in imageUrl column
         const { data, error } = await supabase
             .from('craft_items')
             .insert([{
                 name: newItemData.name,
                 description: newItemData.description,
                 price: newItemData.price,
-                imageUrl: newItemData.imageUrl,
+                imageUrl: JSON.stringify(newItemData.images),
                 category: newItemData.category
             }])
             .select();
@@ -267,7 +287,7 @@ const App: React.FC = () => {
                 name: data[0].name,
                 description: data[0].description,
                 price: data[0].price,
-                imageUrl: data[0].imageUrl, // Accessing camelCase property returned by DB
+                images: newItemData.images, // Use local images data
                 category: data[0].category,
                 modelUrl: data[0].modelUrl
             };
@@ -311,12 +331,15 @@ const App: React.FC = () => {
                   {(connectionError.includes("SQL") || connectionError.includes("Schema")) && (
                      <div className="text-left bg-gray-100 p-4 rounded text-xs overflow-auto font-mono text-gray-600 max-h-40">
                         {`-- Run this in Supabase SQL Editor:
+-- Drop old table if exists or alter it
+DROP TABLE IF EXISTS craft_items;
+
 CREATE TABLE craft_items (
   id bigint generated by default as identity primary key,
   name text not null,
   description text,
   price numeric not null,
-  "imageUrl" text,
+  imageUrl text,
   category text,
   "modelUrl" text
 );
@@ -348,9 +371,8 @@ CREATE POLICY "Public Delete" ON craft_items FOR DELETE USING (true);`}
             />
         </div>
         <div className="text-center md:text-left">
-             {/* Hid title if logo is used, or can be kept as text fallback/accompaniment. Keeping for now as per design. */}
              <h1 className="text-3xl md:text-4xl font-display text-brand-accent select-none drop-shadow-sm leading-tight hidden md:block">Crafty Spinx</h1>
-             <p className="text-sm md:text-base font-semibold text-[#381415] italic mt-1">{SLOGAN}</p>
+             <p className="text-sm md:text-base font-semibold text-pink-600 italic mt-1">{SLOGAN}</p>
         </div>
       </header>
       

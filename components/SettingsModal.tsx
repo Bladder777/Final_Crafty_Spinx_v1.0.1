@@ -20,6 +20,7 @@ const themes = [
     { id: 'pastel', name: 'Pastel Dreams', colors: ['#FFC0CB', '#A0E7E5', '#F38181'] },
     { id: 'forest', name: 'Forest Whisper', colors: ['#A3D29C', '#77A06F', '#C78C53'] },
     { id: 'ocean', name: 'Ocean Breeze', colors: ['#87CEEB', '#4682B4', '#FFA500'] },
+    { id: 'dark', name: 'Midnight Fuzzy', colors: ['#121212', '#1E1E1E', '#FF8FAB'] },
 ];
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentTheme, onSetTheme, isAdminMode, onAdminLogin, onAdminLogout }) => {
@@ -60,7 +61,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentT
                         <span className="font-semibold text-brand-text">{theme.name}</span>
                         <div className="flex space-x-1">
                             {theme.colors.map(color => (
-                                <div key={color} className="w-5 h-5 rounded-full" style={{ backgroundColor: color }}></div>
+                                <div key={color} className="w-5 h-5 rounded-full border border-gray-300/20" style={{ backgroundColor: color }}></div>
                             ))}
                         </div>
                     </div>
@@ -83,7 +84,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentT
                 <div className="p-3 text-sm text-brand-text space-y-4 text-left">
                     <p><strong>Cloud Status:</strong> <span className="text-green-600 font-bold">Connected</span></p>
                     <p className="italic">This application is connected to a live Supabase database.</p>
-                    <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded">Note: Free tier databases may "sleep" after inactivity. If you see an offline error, simply refresh the page to wake it up.</p>
+                    <p className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 p-2 rounded">Note: Free tier databases may "sleep" after inactivity. If you see an offline error, simply refresh the page to wake it up.</p>
                 </div>
             </div>
         </div>
@@ -109,7 +110,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentT
                         onChange={(e) => setPassword(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleUnlockClick()}
                         placeholder="Enter admin password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-accent focus:border-brand-accent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-accent focus:border-brand-accent text-gray-800"
                     />
                     <button
                         onClick={handleUnlockClick}

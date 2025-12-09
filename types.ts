@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export type Category = 'Decor' | 'Crochet' | 'Random';
@@ -7,7 +8,7 @@ export interface CraftItem {
   name: string;
   description: string;
   price: number;
-  imageUrl: string;
+  images: string[];
   category: Category;
   modelUrl?: string;
 }

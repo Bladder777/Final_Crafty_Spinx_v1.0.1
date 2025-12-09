@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { CraftItem } from '../types';
 
@@ -65,7 +66,7 @@ const CartView: React.FC<CartViewProps> = ({ cartItems, onSendInquiry, onRemoveI
               style={{ animationDelay: `${index * 50}ms`}}
             >
               <div className="flex items-center space-x-4">
-                <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
+                <img src={item.images?.[0] || 'https://i.ibb.co/p3TQd17/image-placeholder.png'} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
                 <div>
                   <h3 className="font-bold text-brand-text">{item.name}</h3>
                   <p className="text-sm text-gray-600">R {item.price.toFixed(2)}</p>

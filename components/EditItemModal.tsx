@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { CraftItem } from '../types';
-import { XIcon } from './Icons';
+import { XIcon, TrashIcon, PlusIcon } from './Icons';
 
 interface EditItemModalProps {
   item: CraftItem | null;
@@ -12,8 +13,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, onClose, onSave }) 
   const [name, setName] = useState('');
   const [price, setPrice] = useState(0);
   const [description, setDescription] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>('');
+  const [images, setImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -21,8 +21,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, onClose, onSave }) 
       setName(item.name);
       setPrice(item.price);
       setDescription(item.description);
-      setPreviewUrl(null); // Reset preview when a new item is opened
-      setFileName('');
+      setImages(item.images || []);
     }
   }, [item]);
 
@@ -31,13 +30,20 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, onClose, onSave }) 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setFileName(file.name);
+      if (images.length >= 3) {
+          alert("Maximum 3 images allowed.");
+          return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
+        setImages(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const removeImage = (index: number) => {
+      setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = () => {
@@ -46,7 +52,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, onClose, onSave }) 
       name,
       price: Number(price) || 0,
       description,
-      imageUrl: previewUrl || item.imageUrl,
+      images,
     };
     onSave(updatedItem);
   };
@@ -78,14 +84,33 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, onClose, onSave }) 
         
         {/* Image Preview Section */}
         <div className="space-y-2 mb-4">
-            <label className="block text-sm font-bold text-gray-700">Item Image</label>
-            <div className="w-full h-56 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden relative">
-                <img 
-                    src={previewUrl || item.imageUrl} 
-                    alt="Preview" 
-                    className="w-full h-full object-contain" 
-                />
-            </div>
+            <label className="block text-sm font-bold text-gray-700">Item Images (Max 3)</label>
+            
+            <div className="grid grid-cols-3 gap-2">
+                 {/* Display selected images */}
+                 {images.map((img, idx) => (
+                     <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                         <img src={img} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                         <button 
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                         >
+                             <TrashIcon className="w-3 h-3" />
+                         </button>
+                     </div>
+                 ))}
+                 
+                 {/* Add Button Placeholder */}
+                 {images.length < 3 && (
+                     <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-square rounded-lg border-2 border-dashed border-brand-primary flex flex-col items-center justify-center text-brand-primary hover:bg-brand-background transition-colors"
+                     >
+                         <PlusIcon className="w-6 h-6 mb-1" />
+                         <span className="text-xs font-bold">Add</span>
+                     </button>
+                 )}
+             </div>
             
             <input
                 type="file"
@@ -94,16 +119,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ item, onClose, onSave }) 
                 onChange={handleFileChange}
                 className="hidden"
             />
-
-            <div className="flex flex-col gap-2">
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full bg-brand-secondary text-brand-white-ish font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 shadow-sm"
-                >
-                    {previewUrl ? 'Change Image' : 'Choose New Image'}
-                </button>
-                {fileName && <p className="text-xs text-center text-gray-500 truncate">Selected: {fileName}</p>}
-            </div>
         </div>
 
         {/* Form Fields */}

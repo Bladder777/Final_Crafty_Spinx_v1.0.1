@@ -130,7 +130,7 @@ const SwipeView: React.FC<SwipeViewProps> = ({ items, onAddToCart, cartItemIds, 
                         )}
                     </div>
                     <div>
-                        <img src={currentItem.imageUrl} alt={currentItem.name} className="w-full h-72 object-cover" />
+                        <img src={currentItem.images?.[0] || 'https://i.ibb.co/p3TQd17/image-placeholder.png'} alt={currentItem.name} className="w-full h-72 object-cover" />
                         <div className="absolute top-2 right-2 bg-brand-accent text-brand-white-ish font-bold text-sm px-2 py-1 rounded-full">
                             R {currentItem.price.toFixed(2)}
                         </div>

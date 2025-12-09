@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { CraftItem } from '../types';
-import { WishlistHeartIcon, PencilIcon, TrashIcon } from './Icons';
+import { WishlistHeartIcon, PencilIcon, TrashIcon, RotateIcon } from './Icons';
 
 interface ItemCardProps {
   item: CraftItem;
@@ -15,10 +15,34 @@ interface ItemCardProps {
 }
 
 const ItemCard: React.FC<ItemCardProps> = ({ item, onAddToCart, isInCart, isInWishlist, onToggleWishlist, onEdit, onDeleteItem, isAdminMode }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [animationClass, setAnimationClass] = useState('');
+
+  const images = item.images && item.images.length > 0 ? item.images : [''];
+  const hasMultipleImages = images.length > 1;
+
+  const handleRotate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!hasMultipleImages) return;
+
+    // Trigger flip out
+    setAnimationClass('animate-flip-out');
+  };
+
+  const handleAnimationEnd = () => {
+    if (animationClass === 'animate-flip-out') {
+      // Swap image and trigger flip in
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+      setAnimationClass('animate-flip-in');
+    } else if (animationClass === 'animate-flip-in') {
+      // Reset
+      setAnimationClass('');
+    }
+  };
   
   return (
     <div className="bg-brand-white-ish rounded-xl shadow-lg overflow-hidden flex flex-col h-full group transition-transform duration-300 hover:scale-[1.02]">
-      <div className="relative w-full pt-[100%] bg-white"> {/* Aspect Ratio Box 1:1 */}
+      <div className="relative w-full pt-[100%] bg-white perspective-1000"> {/* Aspect Ratio Box 1:1 */}
         <div className="absolute top-0 left-0 w-full h-full">
              <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
                 <button
@@ -58,10 +82,23 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAddToCart, isInCart, isInWi
             </div>
             
             <img 
-                src={item.imageUrl} 
+                src={images[currentImageIndex]} 
                 alt={item.name} 
-                className="w-full h-full object-contain"
+                className={`w-full h-full object-contain ${animationClass}`}
+                onAnimationEnd={handleAnimationEnd}
             />
+
+            {/* Floating Rotate Button */}
+            {hasMultipleImages && (
+                <button
+                    onClick={handleRotate}
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-brand-white-ish/80 hover:bg-brand-white-ish text-brand-secondary p-2 rounded-full shadow-md backdrop-blur-sm transition-transform hover:scale-110 hover:rotate-180 z-20"
+                    aria-label="Next Image"
+                    title="Next Picture"
+                >
+                    <RotateIcon className="w-5 h-5" />
+                </button>
+            )}
             
             <div className="absolute top-2 right-2 bg-brand-accent text-brand-white-ish font-bold text-sm px-2 py-1 rounded-full shadow-sm">
                 R {item.price.toFixed(2)}

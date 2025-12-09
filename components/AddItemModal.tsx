@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { CraftItem, Category } from '../types';
-import { XIcon } from './Icons';
+import { XIcon, PlusIcon, TrashIcon } from './Icons';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -9,16 +10,40 @@ interface AddItemModalProps {
 }
 
 const CATEGORIES: Category[] = ['Crochet', 'Decor', 'Random'];
-const PLACEHOLDER_IMAGE_PREVIEW = 'https://i.ibb.co/p3TQd17/image-placeholder.png';
 
+// Charming names for auto-generation
+const ADJECTIVES = ['Cuddly', 'Snuggly', 'Fluffy', 'Cozy', 'Soft', 'Gentle', 'Happy', 'Sleepy', 'Brave', 'Little', 'Big', 'Fuzzy', 'Woolly', 'Patchy', 'Sweet'];
+const NOUNS = ['Bear', 'Teddy', 'Cub', 'Paws', 'Buddy', 'Pal', 'Friend', 'Bunny', 'Lamb', 'Pup', 'Owl', 'Froggy'];
+const PROPER_NAMES = ['Barnaby', 'Oliver', 'Pip', 'Daisy', 'Rosie', 'Teddy', 'Arthur', 'Theodore', 'Paddington', 'Winnie', 'Coco', 'Luna', 'Beary', 'Ziggy', 'Momo', 'Bubu', 'Toto', 'Kiki'];
+
+const generateRandomName = (category: Category) => {
+    if (category === 'Decor') {
+         const decorNouns = ['Blanket', 'Rug', 'Throw', 'Coaster', 'Hanging', 'Basket', 'Pillow'];
+         const decorAdjs = ['Cozy', 'Warm', 'Soft', 'Bright', 'Colorful', 'Pastel', 'Vintage', 'Woven'];
+         return `${decorAdjs[Math.floor(Math.random() * decorAdjs.length)]} ${decorNouns[Math.floor(Math.random() * decorNouns.length)]}`;
+    }
+    
+    // Logic for Bears/Crochet
+    const r = Math.random();
+    if (r < 0.4) {
+        // Just a Cute Name: "Ziggy"
+        return PROPER_NAMES[Math.floor(Math.random() * PROPER_NAMES.length)];
+    } else if (r < 0.7) {
+        // Adjective + Noun: "Fluffy Bear"
+        return `${ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]} ${NOUNS[Math.floor(Math.random() * NOUNS.length)]}`;
+    } else {
+        // Proper Name + the + Noun: "Barnaby the Bear"
+        return `${PROPER_NAMES[Math.floor(Math.random() * PROPER_NAMES.length)]} the ${NOUNS[Math.floor(Math.random() * NOUNS.length)]}`;
+    }
+};
 
 const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState(0);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<Category>('Crochet');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>('');
+  const [images, setImages] = useState<string[]>([]);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -26,13 +51,20 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSave }) 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setFileName(file.name);
+      if (images.length >= 3) {
+          alert("Maximum 3 images allowed.");
+          return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
+        setImages(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  const removeImage = (index: number) => {
+      setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const resetForm = () => {
@@ -40,21 +72,23 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSave }) 
       setPrice(0);
       setDescription('');
       setCategory('Crochet');
-      setPreviewUrl(null);
-      setFileName('');
+      setImages([]);
   };
 
   const handleSave = () => {
-    if (!name || !description || !previewUrl) {
-        alert('Please fill out the name, description, and upload an image.');
+    if (!description || images.length === 0) {
+        alert('Please provide at least a description and one image.');
         return;
     }
     
+    // Auto-generate name if left blank
+    const finalName = name.trim() || generateRandomName(category);
+    
     const newItemData: Omit<CraftItem, 'id'> = {
-      name,
+      name: finalName,
       price: Number(price) || 0,
       description,
-      imageUrl: previewUrl,
+      images,
       category,
     };
     onSave(newItemData);
@@ -91,50 +125,51 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSave }) 
 
         <h2 className="text-2xl font-display text-brand-accent mb-4 text-center sticky top-0 bg-brand-white-ish z-10 pb-2">Add New Item</h2>
         
-        {/* Image Preview */}
+        {/* Image Preview Section */}
         <div className="space-y-2 mb-4">
-             <label className="block text-sm font-bold text-gray-700">Item Image*</label>
-             <div className="w-full h-56 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden relative">
-                <img 
-                    src={previewUrl || PLACEHOLDER_IMAGE_PREVIEW} 
-                    alt="Preview" 
-                    className="w-full h-full object-contain"
-                />
-            </div>
-            
+             <label className="block text-sm font-bold text-gray-700">Item Images (Max 3)*</label>
+             
+             <div className="grid grid-cols-3 gap-2">
+                 {/* Display selected images */}
+                 {images.map((img, idx) => (
+                     <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                         <img src={img} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                         <button 
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                         >
+                             <TrashIcon className="w-3 h-3" />
+                         </button>
+                     </div>
+                 ))}
+                 
+                 {/* Add Button Placeholder */}
+                 {images.length < 3 && (
+                     <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-square rounded-lg border-2 border-dashed border-brand-primary flex flex-col items-center justify-center text-brand-primary hover:bg-brand-background transition-colors"
+                     >
+                         <PlusIcon className="w-6 h-6 mb-1" />
+                         <span className="text-xs font-bold">Add</span>
+                     </button>
+                 )}
+             </div>
+             
+             {images.length === 0 && (
+                 <p className="text-xs text-red-400 mt-1">At least one image is required.</p>
+             )}
+
             <input
                 type="file"
                 accept="image/*"
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                required
             />
-
-            <div className="flex flex-col gap-2">
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full bg-brand-secondary text-brand-white-ish font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 shadow-sm"
-                >
-                    {previewUrl ? 'Change Image' : 'Choose Image*'}
-                </button>
-                {fileName && <p className="text-xs text-center text-gray-500 truncate">Selected: {fileName}</p>}
-            </div>
         </div>
 
         {/* Fields */}
         <div className="space-y-4">
-            <div>
-                <label htmlFor="itemName" className="block text-sm font-bold text-gray-700 mb-1">Name*</label>
-                <input 
-                    type="text" 
-                    id="itemName" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-accent focus:border-brand-accent"
-                    required
-                />
-            </div>
              <div>
                 <label htmlFor="itemCategory" className="block text-sm font-bold text-gray-700 mb-1">Category*</label>
                 <select
@@ -145,6 +180,17 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSave }) 
                 >
                     {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
+            </div>
+            <div>
+                <label htmlFor="itemName" className="block text-sm font-bold text-gray-700 mb-1">Name</label>
+                <input 
+                    type="text" 
+                    id="itemName" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-accent focus:border-brand-accent"
+                    placeholder="Leave empty for a random surprise name!"
+                />
             </div>
             <div>
                 <label htmlFor="itemPrice" className="block text-sm font-bold text-gray-700 mb-1">Price (R)</label>
