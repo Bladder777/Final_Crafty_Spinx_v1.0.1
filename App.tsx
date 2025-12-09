@@ -15,7 +15,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 import { supabase } from './services/supabaseClient';
 
 const LOGO_URL = "/logo.png"; 
-const SLOGAN = "Huggables - Joy knitted by hand";
+const SLOGAN = "Huggables - Handmade with love";
 
 const App: React.FC = () => {
   const [items, setItems] = useState<CraftItem[]>([]);
