@@ -350,7 +350,7 @@ CREATE POLICY "Public Delete" ON craft_items FOR DELETE USING (true);`}
         <div className="text-center md:text-left">
              {/* Hid title if logo is used, or can be kept as text fallback/accompaniment. Keeping for now as per design. */}
              <h1 className="text-3xl md:text-4xl font-display text-brand-accent select-none drop-shadow-sm leading-tight hidden md:block">Crafty Spinx</h1>
-             <p className="text-sm md:text-base font-semibold text-gray-800 italic mt-1">{SLOGAN}</p>
+             <p className="text-sm md:text-base font-semibold text-[#381415] italic mt-1">{SLOGAN}</p>
         </div>
       </header>
       
